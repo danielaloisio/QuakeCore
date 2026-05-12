@@ -1,3 +1,21 @@
+/*
+Copyright (C) 2026 M3t4l
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, see
+<https://www.gnu.org/licenses/>.
+*/
+
 #include <SDL2/SDL.h>
 #include "quakedef.h"
 
@@ -79,8 +97,6 @@ qboolean SNDDMA_Init(void)
 int SNDDMA_GetDMAPos(void)
 {
     if (!snd_inited) return 0;
-    /* SDL callback advances consumption; we track write_pos separately.
-       The engine needs a play cursor — expose write_pos as proxy. */
     shm->samplepos = (write_pos / (shm->samplebits / 8)) % shm->samples;
     return shm->samplepos;
 }
