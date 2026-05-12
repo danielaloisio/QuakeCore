@@ -87,7 +87,3 @@ target_link_libraries(QuakeCore PRIVATE
     m
     dl
 )
-
-#set_target_properties(QuakeCore PROPERTIES
- #   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}
-#)
