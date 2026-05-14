@@ -41,7 +41,7 @@ add_executable(QuakeCore
         src/wad.c
         src/world.c
         src/zone.c
-        src/cd_linux.c
+        $<IF:$<PLATFORM_ID:Linux>,src/cd_linux.c,src/cd_null.c>
         src/chase.c
         src/snd_dma.c
         src/snd_mem.c
@@ -58,7 +58,8 @@ add_executable(QuakeCore
         src/gl_screen.c
         src/gl_warp.c
         src/gl_vidsdl.c
-        src/sys_linux.c)
+        src/sys_linux.c
+)
 
 target_compile_definitions(QuakeCore PRIVATE
     GLQUAKE
@@ -66,7 +67,7 @@ target_compile_definitions(QuakeCore PRIVATE
 )
 
 target_compile_options(QuakeCore PRIVATE
-    -Wno-implicit-function-declaration
+   -Wno-implicit-function-declaration
     -Wno-implicit-int
     -Wno-int-conversion
     -Wno-incompatible-pointer-types
