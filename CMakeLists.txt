@@ -67,7 +67,7 @@ target_compile_definitions(QuakeCore PRIVATE
 )
 
 target_compile_options(QuakeCore PRIVATE
-   -Wno-implicit-function-declaration
+    -Wno-implicit-function-declaration
     -Wno-implicit-int
     -Wno-int-conversion
     -Wno-incompatible-pointer-types
