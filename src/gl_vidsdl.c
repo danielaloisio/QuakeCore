@@ -61,6 +61,10 @@ qboolean is8bit      = false;
 qboolean isPermedia  = false;
 qboolean gl_mtexable = false;
 
+extern kbutton_t in_lookup, in_lookdown;
+extern void KeyDown(kbutton_t *b);
+extern void KeyUp(kbutton_t *b);
+
 void (*qglColorTableEXT)(int, int, int, int, int, const void *) = NULL;
 void (*qgl3DfxSetPaletteEXT)(GLuint *)                          = NULL;
 
@@ -525,10 +529,17 @@ void IN_MouseMove(usercmd_t *cmd)
         if (cl.viewangles[PITCH] >  80) cl.viewangles[PITCH] =  80;
         if (cl.viewangles[PITCH] < -70) cl.viewangles[PITCH] = -70;
     } else {
-        if ((in_strafe.state & 1) && noclip_anglehack)
+        if (my < 0) {
+            KeyDown(&in_lookup);
+            KeyUp(&in_lookup);
+        } else if (my > 0) {
+            KeyDown(&in_lookdown);
+            KeyUp(&in_lookdown);
+        }
+       /* if ((in_strafe.state & 1) && noclip_anglehack)
             cmd->upmove -= m_forward.value * my;
         else
-            cmd->forwardmove -= m_forward.value * my;
+            cmd->forwardmove -= m_forward.value * my;*/
     }
     mx = my = 0;
 }
