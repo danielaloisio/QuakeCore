@@ -19,8 +19,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // net_udp.c
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
 #include "quakedef.h"
 
+#ifdef _WIN32
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+#define ioctl(s,cmd,arg) ioctlsocket((SOCKET)(s),(cmd),(u_long*)(arg))
+#define close(s)         closesocket((SOCKET)(s))
+#undef  errno
+#define errno            WSAGetLastError()
+#undef  EWOULDBLOCK
+#define EWOULDBLOCK      WSAEWOULDBLOCK
+#undef  ECONNREFUSED
+#define ECONNREFUSED     WSAECONNREFUSED
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -40,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 extern int close (int);
+#endif
 
 extern cvar_t hostname;
 
@@ -58,6 +78,11 @@ int UDP_Init (void)
 {
 	struct hostent *local;
 	char	buff[MAXHOSTNAMELEN];
+#ifdef _WIN32
+	WSADATA wsaData;
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+		return -1;
+#endif
 	struct qsockaddr addr;
 	char *colon;
 	
@@ -101,6 +126,9 @@ void UDP_Shutdown (void)
 {
 	UDP_Listen (false);
 	UDP_CloseSocket (net_controlsocket);
+#ifdef _WIN32
+	WSACleanup();
+#endif
 }
 
 //=============================================================================
