@@ -58,7 +58,7 @@ add_executable(QuakeCore
         src/gl_screen.c
         src/gl_warp.c
         src/gl_vidsdl.c
-        src/sys_linux.c
+        $<IF:$<PLATFORM_ID:Windows>,src/sys_sdl.c,src/sys_linux.c>
 )
 
 target_compile_definitions(QuakeCore PRIVATE
@@ -82,9 +82,17 @@ target_include_directories(QuakeCore PRIVATE
     ${OPENGL_INCLUDE_DIR}
 )
 
-target_link_libraries(QuakeCore PRIVATE
-    ${SDL2_LIBRARIES}
-    ${OPENGL_LIBRARIES}
-    m
-    dl
-)
+if(WIN32)
+    target_link_libraries(QuakeCore PRIVATE
+        ${SDL2_LIBRARIES}
+        ${OPENGL_LIBRARIES}
+        ws2_32
+    )
+else()
+    target_link_libraries(QuakeCore PRIVATE
+        ${SDL2_LIBRARIES}
+        ${OPENGL_LIBRARIES}
+        m
+        dl
+    )
+endif()

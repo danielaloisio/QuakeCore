@@ -19,12 +19,22 @@ along with this program; if not, see
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#ifndef _WIN32
 #include <dlfcn.h>
+#else
+#ifndef GL_SHARED_TEXTURE_PALETTE_EXT
+#define GL_SHARED_TEXTURE_PALETTE_EXT 0x81FB
+#endif
+#endif
 
 #include <SDL2/SDL.h>
 #include <GL/gl.h>
 
 #include "quakedef.h"
+
+#ifdef _WIN32
+BINDTEXFUNCPTR bindTexFunc;
+#endif
 
 #define WARP_WIDTH  320
 #define WARP_HEIGHT 200
@@ -80,12 +90,18 @@ static void signal_handler(int sig)
 
 static void InitSig(void)
 {
+#ifndef _WIN32
     signal(SIGHUP,  signal_handler);
+#endif
     signal(SIGINT,  signal_handler);
+#ifndef _WIN32
     signal(SIGQUIT, signal_handler);
+#endif
     signal(SIGILL,  signal_handler);
+#ifndef _WIN32
     signal(SIGTRAP, signal_handler);
     signal(SIGBUS,  signal_handler);
+#endif
     signal(SIGTERM, signal_handler);
 }
 
@@ -252,22 +268,29 @@ static void HandleEvents(void)
 void CheckMultiTextureExtensions(void)
 {
     if (strstr(gl_extensions, "GL_SGIS_multitexture") && !COM_CheckParm("-nomtex")) {
+#ifdef _WIN32
+        qglMTexCoord2fSGIS  = (void *)SDL_GL_GetProcAddress("glMTexCoord2fSGIS");
+        qglSelectTextureSGIS = (void *)SDL_GL_GetProcAddress("glSelectTextureSGIS");
+#else
         void *prjobj = dlopen(NULL, RTLD_LAZY);
         if (!prjobj) return;
 
         qglMTexCoord2fSGIS  = dlsym(prjobj, "glMTexCoord2fSGIS");
         qglSelectTextureSGIS = dlsym(prjobj, "glSelectTextureSGIS");
-
+        dlclose(prjobj);
+#endif
         if (qglMTexCoord2fSGIS && qglSelectTextureSGIS) {
             Con_Printf("Multitexture extensions found.\n");
             gl_mtexable = true;
         }
-        dlclose(prjobj);
     }
 }
 
 void GL_Init(void)
 {
+#ifdef _WIN32
+    bindTexFunc = (BINDTEXFUNCPTR)glBindTexture;
+#endif
     gl_vendor     = (const char *)glGetString(GL_VENDOR);
     gl_renderer   = (const char *)glGetString(GL_RENDERER);
     gl_version    = (const char *)glGetString(GL_VERSION);
@@ -310,11 +333,19 @@ qboolean VID_Is8bit(void) { return is8bit; }
 
 void VID_Init8bitPalette(void)
 {
+#ifdef _WIN32
+    void *prjobj = (void *)1;
+#else
     void *prjobj = dlopen(NULL, RTLD_LAZY);
     if (!prjobj) return;
+#endif
 
     if (strstr(gl_extensions, "3DFX_set_global_palette") &&
+#ifdef _WIN32
+        (qgl3DfxSetPaletteEXT = (void *)SDL_GL_GetProcAddress("gl3DfxSetPaletteEXT")) != NULL) {
+#else
         (qgl3DfxSetPaletteEXT = dlsym(prjobj, "gl3DfxSetPaletteEXT")) != NULL) {
+#endif
 
         GLubyte table[256][4];
         char   *oldpal = (char *)d_8to24table;
@@ -331,7 +362,11 @@ void VID_Init8bitPalette(void)
         Con_SafePrintf("8-bit GL extensions enabled.\n");
 
     } else if (strstr(gl_extensions, "GL_EXT_shared_texture_palette") &&
+#ifdef _WIN32
+               (qglColorTableEXT = (void *)SDL_GL_GetProcAddress("glColorTableEXT")) != NULL) {
+#else
                (qglColorTableEXT = dlsym(prjobj, "glColorTableEXT")) != NULL) {
+#endif
 
         char  thePalette[256 * 3];
         char *oldPalette = (char *)d_8to24table;
@@ -349,7 +384,9 @@ void VID_Init8bitPalette(void)
         Con_SafePrintf("8-bit GL extensions enabled.\n");
     }
 
+#ifndef _WIN32
     dlclose(prjobj);
+#endif
 }
 
 static void Check_Gamma(unsigned char *pal)
