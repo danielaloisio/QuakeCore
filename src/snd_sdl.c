@@ -1,4 +1,5 @@
 /*
+Copyright (C) 1996-1997 Id Software, Inc.
 Copyright (C) 2026 M3t4l
 
 This program is free software; you can redistribute it and/or
@@ -8,12 +9,14 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program; if not, see
-<https://www.gnu.org/licenses/>.
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
 */
 
 #include <SDL2/SDL.h>
@@ -24,27 +27,22 @@ static int               snd_inited = 0;
 
 #define SND_BUFFER_SIZE (1 << 16)
 
-static unsigned char dma_buffer[SND_BUFFER_SIZE];
-static volatile int  write_pos = 0;
+static unsigned char     dma_buffer[SND_BUFFER_SIZE];
+static volatile unsigned int dma_read_pos = 0;
 
 static void sdl_audio_callback(void *userdata, Uint8 *stream, int len)
 {
     (void)userdata;
-    int avail = write_pos - shm->samplepos;
-    if (avail < 0) avail = 0;
-    if (avail > len) avail = len;
+    int pos = dma_read_pos & (SND_BUFFER_SIZE - 1);
 
-    int read_byte = (shm->samplepos * (shm->samplebits / 8)) & (SND_BUFFER_SIZE - 1);
-
-    if (read_byte + avail <= SND_BUFFER_SIZE) {
-        memcpy(stream, dma_buffer + read_byte, avail);
+    if (pos + len <= SND_BUFFER_SIZE) {
+        memcpy(stream, dma_buffer + pos, len);
     } else {
-        int first = SND_BUFFER_SIZE - read_byte;
-        memcpy(stream, dma_buffer + read_byte, first);
-        memcpy(stream + first, dma_buffer, avail - first);
+        int first = SND_BUFFER_SIZE - pos;
+        memcpy(stream, dma_buffer + pos, first);
+        memcpy(stream + first, dma_buffer, len - first);
     }
-    if (avail < len)
-        memset(stream + avail, 0, len - avail);
+    dma_read_pos += len;
 }
 
 qboolean SNDDMA_Init(void)
@@ -97,7 +95,8 @@ qboolean SNDDMA_Init(void)
 int SNDDMA_GetDMAPos(void)
 {
     if (!snd_inited) return 0;
-    shm->samplepos = (write_pos / (shm->samplebits / 8)) % shm->samples;
+    int bytes_per_sample = shm->samplebits / 8;
+    shm->samplepos = (int)((dma_read_pos / (unsigned int)bytes_per_sample) % (unsigned int)shm->samples);
     return shm->samplepos;
 }
 
@@ -114,6 +113,5 @@ void SNDDMA_Shutdown(void)
 
 void SNDDMA_Submit(void)
 {
-    if (!snd_inited) return;
-    write_pos = paintedtime * shm->channels * (shm->samplebits / 8);
+    (void)0;
 }
