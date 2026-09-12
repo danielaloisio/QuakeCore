@@ -24,14 +24,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <signal.h>
 #ifndef _WIN32
 #include <dlfcn.h>
-#else
-#ifndef GL_SHARED_TEXTURE_PALETTE_EXT
-#define GL_SHARED_TEXTURE_PALETTE_EXT 0x81FB
-#endif
 #endif
 
 #include <SDL2/SDL.h>
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
+
+#ifndef GL_SHARED_TEXTURE_PALETTE_EXT
+#define GL_SHARED_TEXTURE_PALETTE_EXT 0x81FB
+#endif
 
 #include "quakedef.h"
 
